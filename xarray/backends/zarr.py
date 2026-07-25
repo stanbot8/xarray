@@ -250,19 +250,20 @@ class ZarrArrayWrapper(BackendArray):
         self._array = zarr_array
         self.shape = self._array.shape
 
-        # preserve vlen string object dtype (GH 7328)
-        if (
-            not _zarr_v3()
-            and self._array.filters is not None
-            and any(filt.codec_id == "vlen-utf8" for filt in self._array.filters)
-        ) or (
-            _zarr_v3()
-            and self._array.serializer
-            and self._array.serializer.to_dict()["name"] == "vlen-utf8"
-        ):
-            dtype = coding.strings.create_vlen_dtype(str)
-        else:
-            dtype = self._array.dtype
+        # Preserve native StringDType and object metadata for other vlen strings.
+        dtype = self._array.dtype
+        if dtype.kind != "T":
+            if _zarr_v3():
+                is_vlen_utf8 = (
+                    self._array.serializer is not None
+                    and self._array.serializer.to_dict()["name"] == "vlen-utf8"
+                )
+            else:
+                is_vlen_utf8 = self._array.filters is not None and any(
+                    filt.codec_id == "vlen-utf8" for filt in self._array.filters
+                )
+            if is_vlen_utf8:
+                dtype = coding.strings.create_vlen_dtype(str)
 
         self.dtype = dtype
 
@@ -541,7 +542,9 @@ def extract_zarr_variable_encoding(
 
 # Function below is copied from conventions.encode_cf_variable.
 # The only change is to raise an error for object dtypes.
-def encode_zarr_variable(var, needs_copy=True, name=None):
+def encode_zarr_variable(
+    var, needs_copy=True, name=None, *, zarr_format: ZarrFormat | None = None
+):
     """
     Converts a Variable into another Variable which follows some
     of the CF conventions:
@@ -564,6 +567,14 @@ def encode_zarr_variable(var, needs_copy=True, name=None):
 
     var = conventions.encode_cf_variable(var, name=name)
     var = ensure_dtype_not_object(var, name=name)
+
+    # Zarr cannot store StringDType with a custom na_object.
+    if (
+        zarr_format == 3
+        and var.dtype.kind == "T"
+        and var.dtype == np.dtypes.StringDType()
+    ):
+        return var
 
     # zarr allows unicode, but not variable-length strings, so it's both
     # simpler and more compact to always encode as UTF-8 explicitly.
@@ -903,17 +914,20 @@ class ZarrStore(AbstractWritableDataStore):
 
     def open_store_variable(self, name):
         zarr_array = self.members[name]
-        data = indexing.LazilyIndexedArray(ZarrArrayWrapper(zarr_array))
         try_nczarr = self._mode == "r"
         dimensions, attributes = _get_zarr_dims_and_attrs(
             zarr_array, DIMENSION_KEY, try_nczarr
         )
         attributes = dict(attributes)
+        array_wrapper = ZarrArrayWrapper(zarr_array)
+        data = indexing.LazilyIndexedArray(array_wrapper)
 
         encoding = {
             "chunks": zarr_array.chunks,
             "preferred_chunks": dict(zip(dimensions, zarr_array.chunks, strict=True)),
         }
+        if array_wrapper.dtype.kind == "T":
+            encoding["dtype"] = array_wrapper.dtype
 
         if _zarr_v3():
             encoding.update(
@@ -988,7 +1002,8 @@ class ZarrStore(AbstractWritableDataStore):
         _put_attrs(self.zarr_group, attributes)
 
     def encode_variable(self, variable, name=None):
-        variable = encode_zarr_variable(variable, name=name)
+        zarr_format = self.zarr_group.metadata.zarr_format if _zarr_v3() else 2
+        variable = encode_zarr_variable(variable, name=name, zarr_format=zarr_format)
         return variable
 
     def encode_attribute(self, a):

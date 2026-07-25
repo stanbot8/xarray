@@ -103,6 +103,7 @@ from xarray.tests import (
     requires_scipy_or_netCDF4,
     requires_zarr,
     requires_zarr_v3,
+    requires_zarr_v3_dtypes,
 )
 from xarray.tests.test_coding_times import (
     _ALL_CALENDARS,
@@ -4031,6 +4032,31 @@ class TestInstrumentedZarrStore:
                 with open_dataset(store, engine="zarr") as actual:
                     assert_identical(actual, ds)
             self.check_requests(expected, patches)
+
+
+@requires_zarr_v3_dtypes
+@pytest.mark.skipif(not HAS_STRING_DTYPE, reason="requires StringDType")
+def test_roundtrip_stringdtype_zarr_v3() -> None:
+    dtype = np.dtypes.StringDType()
+    data = np.array(["a", "bb", "ccc"], dtype=dtype)
+    expected = Dataset(
+        {"data": ("dim", data.copy())},
+        coords={
+            "dim": ("dim", data.copy()),
+            "nondim": ("dim", data.copy()),
+        },
+    )
+    store = zarr.storage.MemoryStore({}, read_only=False)
+
+    with assert_no_warnings():
+        expected.to_zarr(store, zarr_format=3, consolidated=False)
+    actual = xr.open_zarr(store, consolidated=False).load()
+    stored = zarr.open_group(store=store)
+
+    for name in expected.variables:
+        assert stored[name].dtype == dtype
+        assert actual[name].dtype == dtype
+    assert_identical(expected, actual)
 
 
 @requires_zarr
