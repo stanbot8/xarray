@@ -13,7 +13,7 @@
     ".github/workflows/publish-test-results.yaml": "5cbdb7f30565ca712d60560b884987d4f45be7f86289b79b5bc6c925aec6072f",
     ".github/workflows/upstream-dev-ci.yaml": "144a79f9749a5a4cf23382c36c6a2f114215f2dd15d6236297702c279548eac5"
   },
-  "generator_sha256": "34bc8c1c1eb9b2799c6a06a6f7bd056799561a0342e1ccd9d7ec69c0f000ae82",
+  "generator_sha256": "9fe7eb2612d4c4d8436e5a627541cad32d0dcba429639855b5a0a2af04b9729a",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
   "source_commit": "14dd6a029bb0e77ea33bef3b304268a1eaaf6acb",
