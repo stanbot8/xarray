@@ -6,11 +6,7 @@ on:
   pull_request:
     branches:
     - main
-    types:
-    - opened
-    - reopened
-    - synchronize
-    - labeled
+    types: [opened, reopened, synchronize, labeled]
   schedule:
   - cron: 0 0 * * *     # Daily “At 00:00” UTC
   workflow_dispatch: # allows you to trigger the workflow run manually
@@ -116,8 +112,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pixi-env:
-        - test-nightly
+        pixi-env: [test-nightly]
 
     env:
       ENV: ${{ matrix.pixi-env }}
@@ -226,8 +221,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pixi-env:
-        - mypy-upstream
+        pixi-env: [mypy-upstream]
 
     env:
       ENV: ${{ matrix.pixi-env }}
@@ -301,7 +295,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 14dd6a029bb0e77ea33bef3b304268a1eaaf6acb
         AB_WORKFLOW_DIGEST: 
-          5681affde48fe427974104f6462269d30ac2c3e2f099b604675b64999173f130
+          08f077f9877b1855954e611c00cf513c1d511eb749fe2a06f80788b546990f10
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

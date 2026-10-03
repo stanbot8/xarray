@@ -6,11 +6,7 @@ on:
   pull_request:
     branches:
     - main
-    types:
-    - opened
-    - reopened
-    - synchronize
-    - labeled
+    types: [opened, reopened, synchronize, labeled]
   schedule:
   - cron: 0 0 * * *     # Daily “At 00:00” UTC
   workflow_dispatch: # allows you to trigger manually
@@ -191,7 +187,7 @@ jobs:
         AB_RUN_ID: ${{ github.run_id }}
         AB_HEAD_SHA: 14dd6a029bb0e77ea33bef3b304268a1eaaf6acb
         AB_WORKFLOW_DIGEST: 
-          5b63d93c29bc1ce4dfdeeb2085fbf8de35b2481cc969cdc3fddb3e94bcb611a3
+          5ef862a130ccfbc678ab37e4356a2bf1035b32e4799f75310109c08b2de63817
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
