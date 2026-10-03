@@ -2,18 +2,18 @@ name: CI Upstream
 on:
   push:
     branches:
-      - main
+    - main
   pull_request:
     branches:
-      - main
+    - main
     types: [opened, reopened, synchronize, labeled]
   schedule:
-    - cron: "0 0 * * *" # Daily “At 00:00” UTC
+  - cron: 0 0 * * *     # Daily “At 00:00” UTC
   workflow_dispatch: # allows you to trigger the workflow run manually
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name != 'schedule' && (true) }}
 
 permissions: {}
 
@@ -24,29 +24,33 @@ jobs:
   detect-ci-trigger:
     name: detect upstream-dev ci trigger
     runs-on: ubuntu-slim
-    if: |
-      github.repository == 'pydata/xarray'
+    if: |-
+      ${{ (github.repository == 'pydata/xarray'
       && (github.event_name == 'push' || github.event_name == 'pull_request')
-      && !contains(github.event.pull_request.labels.*.name, 'skip-ci')
+      && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
     outputs:
       triggered: ${{ steps.detect-trigger.outputs.trigger-found }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        fetch-depth: 2
+        persist-credentials: false
 
-      - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715 # v1.2.1
-        id: detect-trigger
-        with:
-          keyword: "[test-upstream]"
+    - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715   # v1.2.1
+      id: detect-trigger
+      with:
+        keyword: '[test-upstream]'
 
+    needs:
+    - alpha_bridge_inputs
   cache-pixi-lock:
     name: cache pixi.lock
     runs-on: ubuntu-latest
-    needs: detect-ci-trigger
-    if: |
-      always()
+    needs:
+    - detect-ci-trigger
+    - alpha_bridge_inputs
+    if: |-
+      ${{ (always()
       && github.repository == 'pydata/xarray'
       && (
         (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
@@ -57,7 +61,7 @@ jobs:
             || contains( github.event.pull_request.labels.*.name, 'run-upstream')
           )
         )
-      )
+      )) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
 
     env:
       MANIFEST_PATH: ci/nightly/pixi.toml
@@ -67,29 +71,32 @@ jobs:
       cache-key: ${{ steps.pixi-lock.outputs.cache-key }}
       pixi-version: ${{ steps.pixi-lock.outputs.pixi-version }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        persist-credentials: false
 
-      - uses: xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
-        id: pixi-lock
-        with:
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          hash-files: |
-            ${{ env.MANIFEST_PATH }}
-            pyproject.toml
+    - uses: 
+        xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
+      id: pixi-lock
+      with:
+        manifest-path: ${{ env.MANIFEST_PATH }}
+        hash-files: |
+          ${{ env.MANIFEST_PATH }}
+          pyproject.toml
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: pixi-lock
-          path: ${{ env.LOCK_PATH }}
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+      with:
+        name: pixi-lock
+        path: ${{ env.LOCK_PATH }}
 
   upstream-dev:
     name: upstream-dev
     runs-on: ubuntu-latest
-    needs: cache-pixi-lock
-    if: |
-      always() && needs.cache-pixi-lock.result == 'success'
+    needs:
+    - cache-pixi-lock
+    - alpha_bridge_inputs
+    if: |-
+      ${{ (always() && needs.cache-pixi-lock.result == 'success') && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
 
     defaults:
       run:
@@ -97,7 +104,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pixi-env: ["test-nightly"]
+        pixi-env: [test-nightly]
 
     env:
       ENV: ${{ matrix.pixi-env }}
@@ -107,87 +114,94 @@ jobs:
       log-file: ${{ steps.determine-log-path.outputs.log-file }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0 # Fetch all history for all branches and tags.
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        fetch-depth: 0   # Fetch all history for all branches and tags.
+        persist-credentials: false
 
-      - name: Determine log path
-        id: determine-log-path
-        run: |
-          echo "log-file=output-${ENV}-log.jsonl" >> $GITHUB_OUTPUT;
+    - name: Determine log path
+      id: determine-log-path
+      run: |
+        echo "log-file=output-${ENV}-log.jsonl" >> $GITHUB_OUTPUT;
 
-      - name: Restore cached pixi lockfile
-        uses: xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
-        with:
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
+    - name: Restore cached pixi lockfile
+      uses: 
+        xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
+      with:
+        manifest-path: ${{ env.MANIFEST_PATH }}
+        cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
-      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
-        with:
-          pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
-          cache: true
-          environments: ${{ matrix.pixi-env }}
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e   # v0.10.2
+      with:
+        pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
+        cache: true
+        environments: ${{ matrix.pixi-env }}
+        manifest-path: ${{ env.MANIFEST_PATH }}
+        cache-write: ${{ github.event_name == 'push' && github.ref_name == 
+          'main' }}
 
-      - name: Version info
-        run: |
-          pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python xarray/util/print_versions.py
+    - name: Version info
+      run: |
+        pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python xarray/util/print_versions.py
 
-      - name: Import xarray
-        run: |
-          pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python -c 'import xarray'
+    - name: Import xarray
+      run: |
+        pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python -c 'import xarray'
 
-      - name: Run Tests
-        if: success()
-        id: status
-        env:
-          LOG_PATH: ${{ steps.determine-log-path.outputs.log-file }}
-        run: |
-          pixi run \
-            --manifest-path "$MANIFEST_PATH" \
-            -e $ENV \
-            -- \
-            python -m pytest --timeout=60 -rf -nauto --report-log "$LOG_PATH"
+    - name: Run Tests
+      if: success()
+      id: status
+      env:
+        LOG_PATH: ${{ steps.determine-log-path.outputs.log-file }}
+      run: |
+        pixi run \
+          --manifest-path "$MANIFEST_PATH" \
+          -e $ENV \
+          -- \
+          python -m pytest --timeout=60 -rf -nauto --report-log "$LOG_PATH"
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        if: failure()
-        with:
-          name: log file
-          path: ${{ steps.determine-log-path.outputs.log-file }}
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+      if: failure()
+      with:
+        name: log file
+        path: ${{ steps.determine-log-path.outputs.log-file }}
 
   create-issue:
     name: report failing upstream-dev runs
-    needs: upstream-dev
+    needs:
+    - upstream-dev
+    - alpha_bridge_inputs
     runs-on: ubuntu-slim
-    if: |
-      always()
+    if: |-
+      ${{ (always()
       && needs.upstream-dev.result == 'failure'
       && github.event_name == 'schedule'
-      && github.repository_owner == 'pydata'
+      && github.repository_owner == 'pydata') && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
 
     permissions:
       issues: write # open or edit an issue for failed CI runs
 
     steps:
-      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          name: log file
-          path: logs/
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c   # v8.0.1
+      with:
+        name: log file
+        path: logs/
 
-      - name: Generate and publish the report
-        uses: scientific-python/issue-from-pytest-log-action@35b4e0a9e06f8e7e261778289cf4b968b722662d # v1.6.2
-        with:
-          log-path: logs/${{ needs.upstream-dev.outputs.log-file }}
+    - name: Generate and publish the report
+      uses: 
+        scientific-python/issue-from-pytest-log-action@35b4e0a9e06f8e7e261778289cf4b968b722662d       # v1.6.2
+      with:
+        log-path: logs/${{ needs.upstream-dev.outputs.log-file }}
 
   mypy-upstream-dev:
     name: mypy-upstream-dev
     runs-on: ubuntu-latest
-    needs: cache-pixi-lock
-    if: |
-      always()
-      && contains( github.event.pull_request.labels.*.name, 'run-upstream')
+    needs:
+    - cache-pixi-lock
+    - alpha_bridge_inputs
+    if: |-
+      ${{ (always()
+      && contains( github.event.pull_request.labels.*.name, 'run-upstream')) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
 
     defaults:
       run:
@@ -195,50 +209,123 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        pixi-env: ["mypy-upstream"]
+        pixi-env: [mypy-upstream]
 
     env:
       ENV: ${{ matrix.pixi-env }}
       MANIFEST_PATH: ci/nightly/pixi.toml
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0 # Fetch all history for all branches and tags.
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        fetch-depth: 0   # Fetch all history for all branches and tags.
+        persist-credentials: false
 
-      - name: Restore cached pixi lockfile
-        uses: xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
-        with:
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
+    - name: Restore cached pixi lockfile
+      uses: 
+        xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
+      with:
+        manifest-path: ${{ env.MANIFEST_PATH }}
+        cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
-      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
-        with:
-          pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
-          cache: true
-          environments: ${{ matrix.pixi-env }}
-          manifest-path: ${{ env.MANIFEST_PATH }}
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e   # v0.10.2
+      with:
+        pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
+        cache: true
+        environments: ${{ matrix.pixi-env }}
+        manifest-path: ${{ env.MANIFEST_PATH }}
+        cache-write: ${{ github.event_name == 'push' && github.ref_name == 
+          'main' }}
 
-      - name: set environment variables
-        run: |
-          echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-          echo "PYTHON_VERSION=$(pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python --version | cut -d' ' -f2 | cut -d. -f1,2)" >> $GITHUB_ENV
+    - name: set environment variables
+      run: |
+        echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+        echo "PYTHON_VERSION=$(pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python --version | cut -d' ' -f2 | cut -d. -f1,2)" >> $GITHUB_ENV
 
-      - name: Version info
-        run: |
-          pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python xarray/util/print_versions.py
+    - name: Version info
+      run: |
+        pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python xarray/util/print_versions.py
 
-      - name: Run mypy
-        run: |
-          pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python -m mypy --install-types --non-interactive --cobertura-xml-report mypy_report
+    - name: Run mypy
+      run: |
+        pixi run --manifest-path "$MANIFEST_PATH" -e $ENV -- python -m mypy --install-types --non-interactive --cobertura-xml-report mypy_report
 
-      - name: Upload mypy coverage to Codecov
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        with:
-          files: mypy_report/cobertura.xml
-          flags: mypy
-          env_vars: PYTHON_VERSION
-          name: codecov-umbrella
-          fail_ci_if_error: false
+    - name: Upload mypy coverage to Codecov
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5   # v7.1.1
+      with:
+        files: mypy_report/cobertura.xml
+        flags: mypy
+        env_vars: PYTHON_VERSION
+        name: codecov-umbrella
+        fail_ci_if_error: false
+  alpha_bridge_inputs:
+    name: AlphaBridge input check
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    concurrency:
+      group: alpha-bridge-inputs-${{ github.workflow }}-${{ github.sha }}-${{ 
+        github.event.schedule || github.event_name }}
+      cancel-in-progress: false
+    outputs:
+      changed: ${{ steps.identity.outputs.changed }}
+    steps:
+    - id: identity
+      name: Check source, workflow, variables, and runner inputs
+      env:
+        GH_TOKEN: ${{ github.token }}
+        AB_REPOSITORY: ${{ github.repository }}
+        AB_RUN_ID: ${{ github.run_id }}
+        AB_HEAD_SHA: ${{ github.sha }}
+        AB_EVENT: ${{ github.event_name }}
+        AB_SCHEDULE: ${{ github.event.schedule || '' }}
+        AB_VARIABLES: ${{ toJSON(vars) }}
+        AB_INPUTS: ${{ toJSON(inputs) }}
+      shell: bash
+      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native scheduled-CI input check,
+        embedded in the owned fork configuration.\"\"\"\n\nfrom __future__ import
+        annotations\n\nimport hashlib\nimport json\nimport os\nimport urllib.parse\n\
+        import urllib.request\n\n\ndef changed(get, *, repository, run_id, identity,
+        job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
+        )\n    event = current[\"event\"]\n    query = urllib.parse.urlencode(\n \
+        \       {\n            \"head_sha\": current[\"head_sha\"],\n            \"\
+        event\": event,\n            \"per_page\": 100,\n        }\n    )\n    runs
+        = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
+        )\n    for run in runs[\"workflow_runs\"]:\n        if run[\"id\"] == run_id:\n\
+        \            continue\n        if run.get(\"head_sha\") != current[\"head_sha\"\
+        ] or run.get(\"event\") != event:\n            raise ValueError(\"provider
+        returned a different CI input identity\")\n        page = 1\n        while
+        True:\n            jobs = get(\n                f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={page}\"\
+        \n            )[\"jobs\"]\n            for job in jobs:\n                if
+        (\n                    job[\"name\"] == job_name\n                    and
+        job.get(\"status\") == \"completed\"\n                    and job.get(\"conclusion\"\
+        ) == \"success\"\n                    and any(\n                        step[\"\
+        name\"] == f\"AlphaBridge input identity {identity}\"\n                  \
+        \      and step.get(\"conclusion\") == \"success\"\n                     \
+        \   for step in job.get(\"steps\", [])\n                    )\n          \
+        \      ):\n                    return False\n            if len(jobs) < 100:\n\
+        \                break\n            page += 1\n    return True\n\n\ndef main():\n\
+        \    inputs = {\n        \"configuration_commit\": os.environ[\"AB_HEAD_SHA\"\
+        ],\n        \"event\": os.environ[\"AB_EVENT\"],\n        \"schedule\": os.environ[\"\
+        AB_SCHEDULE\"],\n        \"variables\": json.loads(os.environ[\"AB_VARIABLES\"\
+        ]),\n        \"inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"\
+        runner_image\": [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\"\
+        , \"\")],\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        \n    def get(path):\n        request = urllib.request.Request(\n        \
+        \    \"https://api.github.com\" + path,\n            headers={\n         \
+        \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
+        \           \"Accept\": \"application/vnd.github+json\",\n               \
+        \ \"X-GitHub-Api-Version\": \"2026-03-10\",\n            },\n        )\n \
+        \       with urllib.request.urlopen(request, timeout=60) as response:\n  \
+        \          return json.load(response)\n\n    should_run = inputs[\"event\"\
+        ] != \"schedule\" or changed(\n        get,\n        repository=os.environ[\"\
+        AB_REPOSITORY\"],\n        run_id=int(os.environ[\"AB_RUN_ID\"]),\n      \
+        \  identity=identity,\n        job_name=\"AlphaBridge input check\",\n   \
+        \ )\n    with open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"utf-8\"\
+        ) as output:\n        output.write(f\"digest={identity}\\nchanged={str(should_run).lower()}\\\
+        n\")\n    print(\"CI inputs changed\" if should_run else \"CI inputs unchanged;
+        build and test jobs skipped\")\n\n\nif __name__ == \"__main__\":\n    main()\n\
+        \nALPHA_BRIDGE_CI_PY\n"
+    - name: AlphaBridge input identity ${{ steps.identity.outputs.digest }}
+      run: echo 'Input identity recorded'

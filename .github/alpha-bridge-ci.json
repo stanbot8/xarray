@@ -1,0 +1,26 @@
+{
+  "definition_blob_sha1": {
+    ".github/workflows/alpha-bridge-ci-verify.yml": "0588ba302e7a97a9721ae7494f6b9aca053476b6",
+    ".github/workflows/hypothesis.yaml": "5de75550a3e32edf5ce9d7d11a63cf384f2f057c",
+    ".github/workflows/nightly-wheels.yml": "c0e657784150bcbc5a1f606523ac4d75a7aa026c",
+    ".github/workflows/upstream-dev-ci.yaml": "91c2e2005c4b58df73a44a854055c60ef83cc0fc"
+  },
+  "definition_sha256": {
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d3dacd19a9c94cd86ca5ba24b075c35f3ff224d155ca5891f3b4325ece933dac",
+    ".github/workflows/hypothesis.yaml": "4f882d119c2e68eb6c0d649fe6f3632a44e84d783e74e12aee7cef334d80e2fd",
+    ".github/workflows/nightly-wheels.yml": "91f34d024915d182b6985853ebe1a737bfb734f40a1b39ee395f895fcb9a3852",
+    ".github/workflows/upstream-dev-ci.yaml": "4e951b9d52c6722bbff060a7b69aade3bed08260eeac57b04881d01002645ae3"
+  },
+  "generator_sha256": "f238e5d52b0ec5c07f088af203f93698fbdea22a995856dc18c50f5365431353",
+  "schema": "alpha-bridge/fork-ci",
+  "source_branch": "main",
+  "source_commit": "14dd6a029bb0e77ea33bef3b304268a1eaaf6acb",
+  "source_repository": "pydata/xarray",
+  "version": 1,
+  "workflows": [
+    ".github/workflows/alpha-bridge-ci-verify.yml",
+    ".github/workflows/hypothesis.yaml",
+    ".github/workflows/nightly-wheels.yml",
+    ".github/workflows/upstream-dev-ci.yaml"
+  ]
+}
