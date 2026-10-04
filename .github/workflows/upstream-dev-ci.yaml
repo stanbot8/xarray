@@ -39,7 +39,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715   # v1.2.1
       id: detect-trigger
@@ -81,7 +81,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - uses: 
         xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
@@ -128,7 +128,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - name: Determine log path
       id: determine-log-path
@@ -234,7 +234,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - name: Restore cached pixi lockfile
       uses: 
@@ -293,9 +293,9 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         AB_REPOSITORY: ${{ github.repository }}
         AB_RUN_ID: ${{ github.run_id }}
-        AB_HEAD_SHA: 14dd6a029bb0e77ea33bef3b304268a1eaaf6acb
+        AB_HEAD_SHA: 45629ccc7b796fb62e6f50de63832d0d2e33254c
         AB_WORKFLOW_DIGEST: 
-          08f077f9877b1855954e611c00cf513c1d511eb749fe2a06f80788b546990f10
+          1dd8a10f6b4e2600e3b7059a8f9d6d094c8aa76d3b761a0698c4616bb1f8945a
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}

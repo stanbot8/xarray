@@ -1,22 +1,22 @@
 {
   "definition_blob_sha1": {
     ".github/workflows/alpha-bridge-ci-verify.yml": "21051178fb840f31162cde1a64943007a2178f3f",
-    ".github/workflows/hypothesis.yaml": "b745f1bf875744c2d663b64c72d97260baa64f66",
-    ".github/workflows/nightly-wheels.yml": "d445a4c3db2ef27b1a072b3018db0e7866699a4a",
-    ".github/workflows/publish-test-results.yaml": "3898f987586dd00b979262287d90b8bd21ac0d14",
-    ".github/workflows/upstream-dev-ci.yaml": "0db99f7c643aa60f10be51b87ba6a1e719e08763"
+    ".github/workflows/hypothesis.yaml": "4ef7e6b8ea2cdc78282e0be4d119c44c15dec1c9",
+    ".github/workflows/nightly-wheels.yml": "652b2cb3ba58434f252bb15624defb6aac943e5c",
+    ".github/workflows/publish-test-results.yaml": "1f1281a337e5e80239769487b6a23ded6a3c7781",
+    ".github/workflows/upstream-dev-ci.yaml": "03b796e5fe8abe37064338a3afe53fb0bb3887a5"
   },
   "definition_sha256": {
     ".github/workflows/alpha-bridge-ci-verify.yml": "f1d0d506e1faf2ef9e00102fbf464fa1a74203bf3463e623621402b9de9e8a45",
-    ".github/workflows/hypothesis.yaml": "e87a3b20b64d1f7e8bfd5abdf36184ea75d2ad383f90fd864b0fa3643810343e",
-    ".github/workflows/nightly-wheels.yml": "d81cbb6d8766cb2478c50b912b40df21844e56292e5165a392053a55c7c7ba4a",
-    ".github/workflows/publish-test-results.yaml": "5cbdb7f30565ca712d60560b884987d4f45be7f86289b79b5bc6c925aec6072f",
-    ".github/workflows/upstream-dev-ci.yaml": "144a79f9749a5a4cf23382c36c6a2f114215f2dd15d6236297702c279548eac5"
+    ".github/workflows/hypothesis.yaml": "60c8b7d2347abbbc793dbcafd54cb3aa5f10d0236dc15708315a3ac619340ca4",
+    ".github/workflows/nightly-wheels.yml": "3d45b72881b54739163a088260ec6b1e5011e0f98e95176c4d59dd7fdb7737dc",
+    ".github/workflows/publish-test-results.yaml": "bb32e8046093e208ed52c9b606e22454047e0751985acb5086d29aee917d5c7a",
+    ".github/workflows/upstream-dev-ci.yaml": "cacdb4401659baf5e038926c63a06a275089909d4637d355d886f187b3c3a5fd"
   },
   "generator_sha256": "9fe7eb2612d4c4d8436e5a627541cad32d0dcba429639855b5a0a2af04b9729a",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
-  "source_commit": "14dd6a029bb0e77ea33bef3b304268a1eaaf6acb",
+  "source_commit": "45629ccc7b796fb62e6f50de63832d0d2e33254c",
   "source_repository": "pydata/xarray",
   "version": 1,
   "workflows": [

@@ -33,7 +33,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715   # v1.2.1
       id: detect-trigger
@@ -67,7 +67,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - uses: 
         xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
@@ -102,7 +102,7 @@ jobs:
         persist-credentials: false
 
         ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-          'workflow_run') && '14dd6a029bb0e77ea33bef3b304268a1eaaf6acb' || 
+          'workflow_run') && '45629ccc7b796fb62e6f50de63832d0d2e33254c' || 
           github.sha }}
     - name: Restore cached pixi lockfile
       uses: 
@@ -185,9 +185,9 @@ jobs:
         GH_TOKEN: ${{ github.token }}
         AB_REPOSITORY: ${{ github.repository }}
         AB_RUN_ID: ${{ github.run_id }}
-        AB_HEAD_SHA: 14dd6a029bb0e77ea33bef3b304268a1eaaf6acb
+        AB_HEAD_SHA: 45629ccc7b796fb62e6f50de63832d0d2e33254c
         AB_WORKFLOW_DIGEST: 
-          5ef862a130ccfbc678ab37e4356a2bf1035b32e4799f75310109c08b2de63817
+          f80769e987d1a539a03ccbe5b4649f4a4cc7dec33b69c37667edcf91db9c398c
         AB_EVENT: ${{ github.event_name }}
         AB_SCHEDULE: ${{ github.event.schedule || '' }}
         AB_VARIABLES: ${{ toJSON(vars) }}
