@@ -2,15 +2,17 @@ name: CI
 on:
   push:
     branches:
-      - "main"
+    - main
   pull_request:
     branches:
-      - "main"
+    - main
   workflow_dispatch: # allows you to trigger manually
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+  group: ${{ github.workflow }}-${{ ((github.event_name == 'schedule' || 
+    github.event_name == 'workflow_run') && 'refs/heads/main' || github.ref) }}
+  cancel-in-progress: ${{ (github.event_name == 'workflow_dispatch' || 
+    github.run_attempt > 1) && (true) }}
 
 env:
   FORCE_COLOR: 3
@@ -21,26 +23,34 @@ jobs:
   detect-ci-trigger:
     name: detect ci trigger
     runs-on: ubuntu-slim
-    if: |
-      github.repository == 'pydata/xarray'
+    if: |-
+      ${{ (github.repository == 'pydata/xarray'
       && (github.event_name == 'push' || github.event_name == 'pull_request')
-      && !contains(github.event.pull_request.labels.*.name, 'skip-ci')
+      && !contains(github.event.pull_request.labels.*.name, 'skip-ci')) && needs.alpha_bridge_inputs.outputs.changed == 'true' }}
     outputs:
       triggered: ${{ steps.detect-trigger.outputs.trigger-found }}
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 2
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        fetch-depth: 2
+        persist-credentials: false
 
-      - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715 # v1.2.1
-        id: detect-trigger
-        with:
-          keyword: "[skip-ci]"
+        ref: ${{ (github.event_name == 'schedule' || github.event_name == 
+          'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+          github.sha }}
+    - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715   # v1.2.1
+      id: detect-trigger
+      with:
+        keyword: '[skip-ci]'
 
+    needs:
+    - alpha_bridge_inputs
   cache-pixi-lock:
-    needs: detect-ci-trigger
-    if: needs.detect-ci-trigger.outputs.triggered == 'false'
+    needs:
+    - detect-ci-trigger
+    - alpha_bridge_inputs
+    if: ${{ (needs.detect-ci-trigger.outputs.triggered == 'false') && 
+      needs.alpha_bridge_inputs.outputs.changed == 'true' }}
 
     runs-on: ubuntu-latest
 
@@ -48,23 +58,30 @@ jobs:
       cache-key: ${{ steps.pixi-lock.outputs.cache-key }}
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        persist-credentials: false
 
-      - uses: xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
-        id: pixi-lock
+        ref: ${{ (github.event_name == 'schedule' || github.event_name == 
+          'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+          github.sha }}
+    - uses: 
+        xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
+      id: pixi-lock
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: pixi-lock
-          path: pixi.lock
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+      with:
+        name: pixi-lock
+        path: pixi.lock
 
   test:
-    name: "${{ matrix.os }} | ${{ matrix.pixi-env }}${{ matrix.pytest-addopts && format(' ({0})', matrix.pytest-addopts) || '' }}"
+    name: ${{ matrix.os }} | ${{ matrix.pixi-env }}${{ matrix.pytest-addopts && 
+      format(' ({0})', matrix.pytest-addopts) || '' }}
     runs-on: ${{ matrix.os }}
-    needs: cache-pixi-lock
+    needs:
     # The slowest jobs take ~20 minutes; a hung test should not burn the 6h default.
+    - cache-pixi-lock
+    - alpha_bridge_inputs
     timeout-minutes: 60
     defaults:
       run:
@@ -72,152 +89,291 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         # Bookend python versions
-        pixi-env: ["test-py312", "test-py314"]
-        pytest-addopts: [""]
+        pixi-env: [test-py312, test-py314]
+        pytest-addopts: ['']
         include:
           # Minimum python version:
-          - pixi-env: "test-py312-bare-minimum"
-            os: ubuntu-latest
-          - pixi-env: "test-py312-bare-min-and-scipy"
-            os: ubuntu-latest
-          - pixi-env: "test-py312-min-versions"
-            os: ubuntu-latest
+        - pixi-env: test-py312-bare-minimum
+          os: ubuntu-latest
+        - pixi-env: test-py312-bare-min-and-scipy
+          os: ubuntu-latest
+        - pixi-env: test-py312-min-versions
+          os: ubuntu-latest
           # Latest python version:
-          - pixi-env: "test-py314-no-numba"
-            os: ubuntu-latest
-          - pixi-env: "test-py314-no-dask"
-            os: ubuntu-latest
-          - pixi-env: "test-py314"
-            pytest-addopts: "flaky"
-            os: ubuntu-latest
+        - pixi-env: test-py314-no-numba
+          os: ubuntu-latest
+        - pixi-env: test-py314-no-dask
+          os: ubuntu-latest
+        - pixi-env: test-py314
+          pytest-addopts: flaky
+          os: ubuntu-latest
           # The mypy tests must be executed using only 1 process in order to guarantee
           # predictable mypy output messages for comparison to expectations.
-          - pixi-env: "test-py312-with-typing"
-            pytest-addopts: "mypy"
-            numprocesses: 1
-            os: ubuntu-latest
-          - pixi-env: "test-py314-with-typing"
-            numprocesses: 1
-            os: ubuntu-latest
+        - pixi-env: test-py312-with-typing
+          pytest-addopts: mypy
+          numprocesses: 1
+          os: ubuntu-latest
+        - pixi-env: test-py314-with-typing
+          numprocesses: 1
+          os: ubuntu-latest
 
     environment:
       name: codecov
       deployment: false
 
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          fetch-depth: 0 # Fetch all history for all branches and tags.
-          persist-credentials: false
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1   # v7.0.1
+      with:
+        fetch-depth: 0   # Fetch all history for all branches and tags.
+        persist-credentials: false
 
-      - name: Restore cached pixi lockfile
-        uses: xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d # v0.1.1
-        with:
-          cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
+        ref: ${{ (github.event_name == 'schedule' || github.event_name == 
+          'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+          github.sha }}
+    - name: Restore cached pixi lockfile
+      uses: 
+        xarray-contrib/pixi-lock/restore@1fab4c17af8243f6ca1321bc941cf2325f46c05d       # v0.1.1
+      with:
+        cache-key: ${{ needs.cache-pixi-lock.outputs.cache-key }}
 
-      - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e # v0.10.2
-        with:
-          pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
-          cache: true
-          environments: ${{ matrix.pixi-env }}
-          cache-write: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    - uses: prefix-dev/setup-pixi@d3f436a425481402e6a95a1d1fc10331c708cd9e   # v0.10.2
+      with:
+        pixi-version: ${{ needs.cache-pixi-lock.outputs.pixi-version }}
+        cache: true
+        environments: ${{ matrix.pixi-env }}
+        cache-write: ${{ github.event_name == 'push' && ((github.event_name == 
+          'schedule' || github.event_name == 'workflow_run') && 'main' || 
+          github.ref_name) == 'main' }}
 
-      - name: Set environment variables
-        run: |
-          echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
-          echo "PYTHON_VERSION=$(pixi run -e ${{ matrix.pixi-env }} -- python --version | cut -d' ' -f2 | cut -d. -f1,2)" >> $GITHUB_ENV
+    - name: Set environment variables
+      run: |
+        echo "TODAY=$(date +'%Y-%m-%d')" >> $GITHUB_ENV
+        echo "PYTHON_VERSION=$(pixi run -e ${{ matrix.pixi-env }} -- python --version | cut -d' ' -f2 | cut -d. -f1,2)" >> $GITHUB_ENV
 
-          if [[ "${{ matrix.pytest-addopts }}" != "" ]] ;
+        if [[ "${{ matrix.pytest-addopts }}" != "" ]] ;
+        then
+          if [[ "${{ matrix.pytest-addopts }}" == "flaky" ]] ;
           then
-            if [[ "${{ matrix.pytest-addopts }}" == "flaky" ]] ;
-            then
-              # The thread timeout method also kills tests stuck in C code or deadlocked
-              # threads, which the default signal method cannot interrupt.
-              echo "PYTEST_ADDOPTS=-m 'flaky or network' --run-flaky --run-network-tests --timeout-method=thread -W default" >> $GITHUB_ENV
-            elif [[ "${{ matrix.pytest-addopts }}" == "mypy" ]] ;
-            then
-              echo "PYTEST_ADDOPTS=-n 1 -m 'mypy' --run-mypy -W default" >> $GITHUB_ENV
-            fi
-            if [[ "${{ matrix.pixi-env }}" == "min-all-deps" ]] ;
-            then
-              # Don't raise on warnings
-              echo "PYTEST_ADDOPTS=-W default" >> $GITHUB_ENV
-            fi
+            # The thread timeout method also kills tests stuck in C code or deadlocked
+            # threads, which the default signal method cannot interrupt.
+            echo "PYTEST_ADDOPTS=-m 'flaky or network' --run-flaky --run-network-tests --timeout-method=thread -W default" >> $GITHUB_ENV
+          elif [[ "${{ matrix.pytest-addopts }}" == "mypy" ]] ;
+          then
+            echo "PYTEST_ADDOPTS=-n 1 -m 'mypy' --run-mypy -W default" >> $GITHUB_ENV
           fi
+          if [[ "${{ matrix.pixi-env }}" == "min-all-deps" ]] ;
+          then
+            # Don't raise on warnings
+            echo "PYTEST_ADDOPTS=-W default" >> $GITHUB_ENV
+          fi
+        fi
 
       # We only want to install this on one run, because otherwise we'll have
       # duplicate annotations.
-      - name: Install error reporter
-        if: |
-          matrix.os == 'ubuntu-latest' && matrix.pixi-env == 'test'
-        run: |
-          pixi add --pypi pytest-github-actions-annotate-failures
+    - name: Install error reporter
+      if: |
+        matrix.os == 'ubuntu-latest' && matrix.pixi-env == 'test'
+      run: |
+        pixi add --pypi pytest-github-actions-annotate-failures
 
-      - name: Version info
-        run: |
-          pixi run -e ${{ matrix.pixi-env }} -- python xarray/util/print_versions.py
+    - name: Version info
+      run: |
+        pixi run -e ${{ matrix.pixi-env }} -- python xarray/util/print_versions.py
 
-      - name: Import xarray
-        run: |
-          pixi run -e ${{ matrix.pixi-env }} -- python -c "import xarray"
+    - name: Import xarray
+      run: |
+        pixi run -e ${{ matrix.pixi-env }} -- python -c "import xarray"
 
       # caches are immutable, so use a unique key per job and restore the latest cache
       # https://github.com/actions/cache/blob/main/tips-and-workarounds.md#update-a-cache
-      - name: Restore cached hypothesis directory
-        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .hypothesis/
-          key: cache-hypothesis-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ strategy.job-index }}
-          restore-keys: |
-            cache-hypothesis-${{ runner.os }}-
-            cache-hypothesis-
-          enableCrossOsArchive: true
+    - name: Restore cached hypothesis directory
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
+      with:
+        path: .hypothesis/
+        key: cache-hypothesis-${{ runner.os }}-${{ github.run_id }}-${{ 
+          github.run_attempt }}-${{ strategy.job-index }}
+        restore-keys: |
+          cache-hypothesis-${{ runner.os }}-
+          cache-hypothesis-
+        enableCrossOsArchive: true
 
-      - name: Run tests
-        id: tests
-        run: |
-          pixi run -e ${{ matrix.pixi-env }} -- python -m pytest -n ${{ matrix.numprocesses || 4 }} \
-            --timeout 180 \
-            --cov=xarray \
-            --cov-report=xml \
-            --junitxml=pytest.xml
+    - name: Run tests
+      id: tests
+      run: |
+        pixi run -e ${{ matrix.pixi-env }} -- python -m pytest -n ${{ matrix.numprocesses || 4 }} \
+          --timeout 180 \
+          --cov=xarray \
+          --cov-report=xml \
+          --junitxml=pytest.xml
 
       # explicitly save the cache so it gets updated, also do this even if the tests fail
-      - name: Save cached hypothesis directory
-        if: always() && steps.tests.outcome != 'skipped'
-        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
-        with:
-          path: .hypothesis/
-          key: cache-hypothesis-${{ runner.os }}-${{ github.run_id }}-${{ github.run_attempt }}-${{ strategy.job-index }}
-          enableCrossOsArchive: true
+    - name: Save cached hypothesis directory
+      if: always() && steps.tests.outcome != 'skipped'
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9   # v6.1.0
+      with:
+        path: .hypothesis/
+        key: cache-hypothesis-${{ runner.os }}-${{ github.run_id }}-${{ 
+          github.run_attempt }}-${{ strategy.job-index }}
+        enableCrossOsArchive: true
 
-      - name: Upload test results
-        if: always()
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: Test results for OS ${{ runner.os }} pixi-env ${{ matrix.pixi-env }} pytest-addopts ${{ matrix.pytest-addopts }}
-          path: pytest.xml
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+      with:
+        name: Test results for OS ${{ runner.os }} pixi-env ${{ matrix.pixi-env 
+          }} pytest-addopts ${{ matrix.pytest-addopts }}
+        path: pytest.xml
 
-      - name: Upload code coverage to Codecov
-        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        with:
-          files: ./coverage.xml
-          flags: unittests
-          env_vars: RUNNER_OS,PYTHON_VERSION
-          name: codecov-umbrella
-          fail_ci_if_error: false
+    - name: Upload code coverage to Codecov
+      uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5   # v7.1.1
+      env:
+        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+      with:
+        files: ./coverage.xml
+        flags: unittests
+        env_vars: RUNNER_OS,PYTHON_VERSION
+        name: codecov-umbrella
+        fail_ci_if_error: false
 
+    if: ${{ (success()) && needs.alpha_bridge_inputs.outputs.changed == 'true' 
+      }}
   event_file:
-    name: "Event File"
+    name: Event File
     runs-on: ubuntu-slim
-    if: github.repository == 'pydata/xarray'
+    if: ${{ (github.repository == 'pydata/xarray') && 
+      needs.alpha_bridge_inputs.outputs.changed == 'true' }}
     steps:
-      - name: Upload
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: Event File
-          path: ${{ github.event_path }}
+    - name: Upload
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a   # v7.0.1
+      with:
+        name: Event File
+        path: ${{ github.event_path }}
+    needs:
+    - alpha_bridge_inputs
+  alpha_bridge_inputs:
+    name: CI input check
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+    concurrency:
+      group: alpha-bridge-inputs-${{ github.workflow }}-${{ github.sha }}-${{ 
+        github.event.schedule || github.event_name }}
+      cancel-in-progress: false
+    outputs:
+      changed: ${{ steps.identity.outputs.changed }}
+    steps:
+    - id: identity
+      name: Check source, workflow, variables, and runner inputs
+      env:
+        GH_TOKEN: ${{ github.token }}
+        AB_REPOSITORY: ${{ github.repository }}
+        AB_RUN_ID: ${{ github.run_id }}
+        AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name 
+          == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+          github.sha }}
+        AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
+          'workflow_run') && 'refs/heads/main' || github.ref }}
+        AB_WORKFLOW_DIGEST: 
+          0cf7a57635c4a4627fdbc03d0df6190217dcb657013b464e65b366135c411f4d
+        AB_EVENT: ${{ github.event_name }}
+        AB_SCHEDULE: ${{ github.event.schedule || '' }}
+        AB_VARIABLES: ${{ toJSON(vars) }}
+        AB_INPUTS: ${{ toJSON(inputs) }}
+        AB_WORKFLOW_RUN: ${{ toJSON(github.event.workflow_run) }}
+      shell: bash
+      run: "python3 - <<'ALPHA_BRIDGE_CI_PY'\n\"\"\"Native automatic-CI input check,
+        embedded in the owned fork configuration.\"\"\"\n\nfrom __future__ import
+        annotations\n\nimport base64\nimport hashlib\nimport json\nimport os\nimport
+        re\nimport urllib.parse\nimport urllib.request\n\nINPUT_CHECK_NAMES = (\"\
+        CI input check\", \"AlphaBridge input check\")\nINPUT_IDENTITY_PREFIXES =
+        (\"CI input identity \", \"AlphaBridge input identity \")\n\n\ndef input_identity(job):\n\
+        \    for step in job.get(\"steps\", []):\n        if step.get(\"conclusion\"\
+        ) != \"success\":\n            continue\n        name = step.get(\"name\"\
+        , \"\")\n        for prefix in INPUT_IDENTITY_PREFIXES:\n            if name.startswith(prefix):\n\
+        \                identity = name.removeprefix(prefix)\n                if
+        re.fullmatch(r\"[0-9a-f]{64}\", identity):\n                    return identity\n\
+        \    return \"\"\n\n\ndef parent_has_work(get, repository, parent):\n    if
+        (\n        not parent\n        or parent.get(\"head_branch\") != \"alpha-bridge-ci\"\
+        \n        or parent.get(\"status\") != \"completed\"\n    ):\n        return
+        True\n    sha = parent[\"head_sha\"]\n    if re.fullmatch(r\"[0-9a-f]{40}\"\
+        , sha) is None:\n        raise ValueError(\"parent workflow has no exact configuration
+        commit\")\n    record = get(f\"/repos/{repository}\")\n    marker_file = get(f\"\
+        /repos/{repository}/contents/.github/alpha-bridge-ci.json?ref={sha}\")\n \
+        \   marker = json.loads(base64.b64decode(marker_file[\"content\"]))\n    if
+        (\n        record.get(\"fork\") is not True\n        or marker.get(\"schema\"\
+        ) != \"alpha-bridge/fork-ci\"\n        or marker.get(\"source_repository\"\
+        ) != record.get(\"parent\", {}).get(\"full_name\")\n    ):\n        raise
+        ValueError(\"parent CI configuration has no verified fork ownership\")\n \
+        \   path = parent[\"path\"].split(\"@\", 1)[0]\n    if not path.startswith(\"\
+        .github/workflows/\") or \"/\" in path.removeprefix(\".github/workflows/\"\
+        ):\n        raise ValueError(\"parent workflow path is outside its configuration
+        owner\")\n    definition = get(f\"/repos/{repository}/contents/{urllib.parse.quote(path,
+        safe='/')}?ref={sha}\")\n    if hashlib.sha256(base64.b64decode(definition[\"\
+        content\"])).hexdigest() != marker.get(\n        \"definition_sha256\", {}\n\
+        \    ).get(path):\n        raise ValueError(\"parent workflow differs from
+        its owned definition\")\n    if path == \".github/workflows/alpha-bridge-ci-verify.yml\"\
+        :\n        return False\n    jobs = []\n    page = 1\n    while True:\n  \
+        \      values = get(\n            f\"/repos/{repository}/actions/runs/{parent['id']}/jobs?per_page=100&page={page}\"\
+        \n        )[\"jobs\"]\n        jobs.extend(values)\n        if len(values)
+        < 100:\n            break\n        page += 1\n    guards = [\n        job\n\
+        \        for job in jobs\n        if job.get(\"name\") in INPUT_CHECK_NAMES\n\
+        \        and job.get(\"conclusion\") == \"success\"\n        and input_identity(job)\n\
+        \    ]\n    return not guards or any(\n        job not in guards and job.get(\"\
+        conclusion\") != \"skipped\" for job in jobs\n    )\n\n\ndef changed(get,
+        *, repository, run_id, identity, job_name):\n    current = get(f\"/repos/{repository}/actions/runs/{run_id}\"\
+        )\n    event = current[\"event\"]\n    page = 1\n    while True:\n       \
+        \ # Filter locally: GitHub caps filtered searches at 1,000 results.\n    \
+        \    query = urllib.parse.urlencode({\"per_page\": 100, \"page\": page})\n\
+        \        runs = get(f\"/repos/{repository}/actions/workflows/{current['workflow_id']}/runs?{query}\"\
+        )\n        for run in runs[\"workflow_runs\"]:\n            if run[\"id\"\
+        ] == run_id:\n                continue\n            if run.get(\"head_branch\"\
+        ) != current[\"head_branch\"] or run.get(\"event\") != event:\n          \
+        \      continue\n            job_page = 1\n            while True:\n     \
+        \           jobs = get(\n                    f\"/repos/{repository}/actions/runs/{run['id']}/jobs?per_page=100&page={job_page}\"\
+        \n                )[\"jobs\"]\n                for job in jobs:\n        \
+        \            if (\n                        (\n                           \
+        \ job[\"name\"] in INPUT_CHECK_NAMES\n                            if job_name
+        in INPUT_CHECK_NAMES\n                            else job[\"name\"] == job_name\n\
+        \                        )\n                        and job.get(\"status\"\
+        ) == \"completed\"\n                        and job.get(\"conclusion\") ==
+        \"success\"\n                        and input_identity(job) == identity\n\
+        \                    ):\n                        return False\n          \
+        \      if len(jobs) < 100:\n                    break\n                job_page
+        += 1\n        if len(runs[\"workflow_runs\"]) < 100:\n            return True\n\
+        \        page += 1\n\n\ndef main():\n    event = os.environ[\"AB_EVENT\"]\n\
+        \    event_payload = None\n    if event not in {\"schedule\", \"workflow_run\"\
+        }:\n        with open(os.environ[\"GITHUB_EVENT_PATH\"], encoding=\"utf-8\"\
+        ) as payload_file:\n            event_payload = json.load(payload_file)\n\
+        \    inputs = {\n        \"source_commit\": os.environ[\"AB_HEAD_SHA\"],\n\
+        \        \"source_ref\": os.environ[\"AB_REF\"],\n        \"workflow_definition\"\
+        : os.environ[\"AB_WORKFLOW_DIGEST\"],\n        \"event\": event,\n       \
+        \ \"event_payload\": event_payload,\n        \"schedule\": os.environ[\"AB_SCHEDULE\"\
+        ],\n        \"variables\": json.loads(os.environ[\"AB_VARIABLES\"]),\n   \
+        \     \"inputs\": json.loads(os.environ[\"AB_INPUTS\"]),\n        \"runner_image\"\
+        : [os.environ.get(\"ImageOS\", \"\"), os.environ.get(\"ImageVersion\", \"\"\
+        )],\n        \"producer\": json.loads(os.environ.get(\"AB_WORKFLOW_RUN\",
+        \"null\")),\n    }\n    identity = hashlib.sha256(json.dumps(inputs, sort_keys=True).encode()).hexdigest()\n\
+        \n    def get(path):\n        request = urllib.request.Request(\n        \
+        \    \"https://api.github.com\" + path,\n            headers={\n         \
+        \       \"Authorization\": \"Bearer \" + os.environ[\"GH_TOKEN\"],\n     \
+        \           \"Accept\": \"application/vnd.github+json\",\n               \
+        \ \"X-GitHub-Api-Version\": \"2026-03-10\",\n            },\n        )\n \
+        \       with urllib.request.urlopen(request, timeout=60) as response:\n  \
+        \          return json.load(response)\n\n    manual = event == \"workflow_dispatch\"\
+        \ or int(os.environ[\"GITHUB_RUN_ATTEMPT\"]) > 1\n    should_run = manual
+        or (\n        (\n            inputs[\"event\"] != \"workflow_run\"\n     \
+        \       or parent_has_work(get, os.environ[\"AB_REPOSITORY\"], inputs[\"producer\"\
+        ])\n        )\n        and changed(\n            get,\n            repository=os.environ[\"\
+        AB_REPOSITORY\"],\n            run_id=int(os.environ[\"AB_RUN_ID\"]),\n  \
+        \          identity=identity,\n            job_name=\"CI input check\",\n\
+        \        )\n    )\n    with open(os.environ[\"GITHUB_OUTPUT\"], \"a\", encoding=\"\
+        utf-8\") as output:\n        output.write(f\"digest={identity}\\nchanged={str(should_run).lower()}\\\
+        n\")\n    print(\n        \"Explicit CI run requested\"\n        if manual\n\
+        \        else \"CI inputs changed\"\n        if should_run\n        else \"\
+        CI inputs unchanged; build and test jobs skipped\"\n    )\n\n\nif __name__
+        == \"__main__\":\n    main()\n\nALPHA_BRIDGE_CI_PY\n"
+    - name: CI input identity ${{ steps.identity.outputs.digest }}
+      run: echo 'Input identity recorded'

@@ -1,19 +1,31 @@
 {
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "d0cf89303388ac1271c908436e9f4bfe75bae884",
-    ".github/workflows/hypothesis.yaml": "ced25300f8a3eee9386a2014a81e6177acd2874a",
-    ".github/workflows/nightly-wheels.yml": "6757eef8cbb1cd75a0f9910c25b0022e2749401f",
-    ".github/workflows/publish-test-results.yaml": "ef21218ab0e2f1ceebf4cbc802f5e452b57d3616",
-    ".github/workflows/upstream-dev-ci.yaml": "e839363c43aec86c3dfec9954135ecb3bc8e1435"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d19efeb3bd029beb4c50fd874010d2b930d20715",
+    ".github/workflows/benchmarks-last-release.yml": "a61659d0acb1fff2dd7e9ee934dafbe2168f9f32",
+    ".github/workflows/benchmarks.yml": "b98518c2f97421e31571f4247b6554f5e7eacde6",
+    ".github/workflows/ci-additional.yaml": "254b04ffcbe6700eb14165159db26895448ed835",
+    ".github/workflows/ci.yaml": "d0cd250f591461123fdbb0788eb19c09a2741eb2",
+    ".github/workflows/hypothesis.yaml": "62e237f07456815564a96f88706fefc8cf8dc540",
+    ".github/workflows/label-prs.yml": "70a46476740fa6861e3a92865819b3414c3d45cd",
+    ".github/workflows/nightly-wheels.yml": "aaeed5ee7de7af4c9da88c3c03acf4cb1638e9db",
+    ".github/workflows/publish-test-results.yaml": "80ee7cc95118edfcdedfab21381212146580483c",
+    ".github/workflows/pypi-release.yaml": "5557a8071eb0930689fdb3f511dcc111e0cef074",
+    ".github/workflows/upstream-dev-ci.yaml": "544dad9a1cecb3aa33067d49c334c3f878d075f2"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "99e25329cff2a8ae245f2f99850472bdd82f571c3bc33fadfc5ac11b9f29cb7e",
-    ".github/workflows/hypothesis.yaml": "8c792cb36e1773d4ed5b1ce2030a5139ebf5a65ddc6aaa2cd6363eaaf4926a94",
-    ".github/workflows/nightly-wheels.yml": "293e3f29b54ffb3fbd5d46c5a0865e3f1cd6f7eff9458051221bdb8608b369d3",
-    ".github/workflows/publish-test-results.yaml": "ff9e34e2392a28025b299871c0b5815f4cc9a001c31a6e1156dd49ce14589459",
-    ".github/workflows/upstream-dev-ci.yaml": "09a8cd2d5a31905dcb5b61bd88fda2eb74b63b222efa8ae4be397067499a08fb"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "8fde9e2f5e1b37bbbb22794427ac6d217d8b18bc857606edd0b072e89c58b436",
+    ".github/workflows/benchmarks-last-release.yml": "c9ad2c0c7fe3edd8ca73ab891c4f2b606bb4ba70cc20941b4cea9e96555244f2",
+    ".github/workflows/benchmarks.yml": "4066cf6237666e5c2d29fc275243f6951c5a7312b7f8aaf8fad0ab1f242e6bb0",
+    ".github/workflows/ci-additional.yaml": "9e782b9199d7224b3b4d834dba40e34d92fe80271b23eb4337720b610d467457",
+    ".github/workflows/ci.yaml": "bc7a90719bddbe6dc3d22a9a3401f8d91ac95523d3b1bfe92f9d32b774cd05a5",
+    ".github/workflows/hypothesis.yaml": "236eaacd484eae37670601bc81904450ab679768ad4a62dabebfb6691a8a1fed",
+    ".github/workflows/label-prs.yml": "0029e1b75462a76243e44bd4653b33c9c539f2766df0c41943d4a42b37bff90f",
+    ".github/workflows/nightly-wheels.yml": "427d8d55ee5caa0e796381728451b3ab987adb7562d59b10b3a80a67ecfb0459",
+    ".github/workflows/publish-test-results.yaml": "39fb40521cd75ca5a154af467f598bb6b1fb9367cc64e05967c8464f1e953ab5",
+    ".github/workflows/pypi-release.yaml": "c5b517b1168e8ecb889a90b4716926934efc088aebff24bcdc8b87f25fd702d7",
+    ".github/workflows/upstream-dev-ci.yaml": "378b9a731790d76213ea1ab815fca0d23acc14fadd16022ef6ccf8a6d6738099"
   },
-  "generator_sha256": "8bff038bcb711330ba78bf433a2923d57d4ddfeedd59b8324e44e2a59f6b0389",
+  "generator_sha256": "f9d11fba5b604bac754f7ab7e40ccde549adf8e029da2ca91ed14e9ab94c0775",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
   "source_commit": "c2041a202c8f375f1eecd48995b15b095b47f268",
@@ -21,9 +33,15 @@
   "version": 1,
   "workflows": [
     ".github/workflows/alpha-bridge-ci-verify.yml",
+    ".github/workflows/benchmarks-last-release.yml",
+    ".github/workflows/benchmarks.yml",
+    ".github/workflows/ci-additional.yaml",
+    ".github/workflows/ci.yaml",
     ".github/workflows/hypothesis.yaml",
+    ".github/workflows/label-prs.yml",
     ".github/workflows/nightly-wheels.yml",
     ".github/workflows/publish-test-results.yaml",
+    ".github/workflows/pypi-release.yaml",
     ".github/workflows/upstream-dev-ci.yaml"
   ]
 }
