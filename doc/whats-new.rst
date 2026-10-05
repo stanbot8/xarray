@@ -60,6 +60,12 @@ Bug Fixes
   copied file-backed dataset can release a file reopened after the original
   dataset is closed (:issue:`10106`, :pull:`11643`).
   By `nightcityblade <https://github.com/nightcityblade>`_.
+- :py:meth:`DataArray.idxmin`, :py:meth:`DataArray.idxmax` and the
+  :py:class:`Dataset` equivalents no longer cast integer labels to ``float64``
+  for floating-point data without any all-``NaN`` slices. The label dtype only
+  changes if a slice is all-``NaN`` and has to be filled with ``fill_value``
+  (:issue:`7527`, :pull:`11544`).
+  By `Shurong Cao <https://github.com/CAOShurong>`_.
 
 
 Documentation
@@ -67,6 +73,10 @@ Documentation
 - Fix the backend array indexing examples to pass indexers as a single tuple
   to ``_raw_indexing_method`` (:issue:`7450`, :pull:`11583`).
   By `Seahzee <https://github.com/Seahzee>`_.
+- Fixed the ``kwargs`` entry in the :py:meth:`Dataset.curvefit` and
+  :py:meth:`DataArray.curvefit` docstrings: both take a ``kwargs`` dict, not
+  ``**kwargs`` (:issue:`6891`, :pull:`11536`).
+  By `Advit Arora <https://github.com/advitrocks9>`_.
 
 Performance
 ~~~~~~~~~~~

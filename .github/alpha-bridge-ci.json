@@ -1,22 +1,22 @@
 {
   "definition_blob_sha1": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "21051178fb840f31162cde1a64943007a2178f3f",
-    ".github/workflows/hypothesis.yaml": "4ef7e6b8ea2cdc78282e0be4d119c44c15dec1c9",
-    ".github/workflows/nightly-wheels.yml": "652b2cb3ba58434f252bb15624defb6aac943e5c",
-    ".github/workflows/publish-test-results.yaml": "1f1281a337e5e80239769487b6a23ded6a3c7781",
-    ".github/workflows/upstream-dev-ci.yaml": "03b796e5fe8abe37064338a3afe53fb0bb3887a5"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "d0cf89303388ac1271c908436e9f4bfe75bae884",
+    ".github/workflows/hypothesis.yaml": "ced25300f8a3eee9386a2014a81e6177acd2874a",
+    ".github/workflows/nightly-wheels.yml": "6757eef8cbb1cd75a0f9910c25b0022e2749401f",
+    ".github/workflows/publish-test-results.yaml": "ef21218ab0e2f1ceebf4cbc802f5e452b57d3616",
+    ".github/workflows/upstream-dev-ci.yaml": "e839363c43aec86c3dfec9954135ecb3bc8e1435"
   },
   "definition_sha256": {
-    ".github/workflows/alpha-bridge-ci-verify.yml": "f1d0d506e1faf2ef9e00102fbf464fa1a74203bf3463e623621402b9de9e8a45",
-    ".github/workflows/hypothesis.yaml": "60c8b7d2347abbbc793dbcafd54cb3aa5f10d0236dc15708315a3ac619340ca4",
-    ".github/workflows/nightly-wheels.yml": "3d45b72881b54739163a088260ec6b1e5011e0f98e95176c4d59dd7fdb7737dc",
-    ".github/workflows/publish-test-results.yaml": "bb32e8046093e208ed52c9b606e22454047e0751985acb5086d29aee917d5c7a",
-    ".github/workflows/upstream-dev-ci.yaml": "cacdb4401659baf5e038926c63a06a275089909d4637d355d886f187b3c3a5fd"
+    ".github/workflows/alpha-bridge-ci-verify.yml": "99e25329cff2a8ae245f2f99850472bdd82f571c3bc33fadfc5ac11b9f29cb7e",
+    ".github/workflows/hypothesis.yaml": "8c792cb36e1773d4ed5b1ce2030a5139ebf5a65ddc6aaa2cd6363eaaf4926a94",
+    ".github/workflows/nightly-wheels.yml": "293e3f29b54ffb3fbd5d46c5a0865e3f1cd6f7eff9458051221bdb8608b369d3",
+    ".github/workflows/publish-test-results.yaml": "ff9e34e2392a28025b299871c0b5815f4cc9a001c31a6e1156dd49ce14589459",
+    ".github/workflows/upstream-dev-ci.yaml": "09a8cd2d5a31905dcb5b61bd88fda2eb74b63b222efa8ae4be397067499a08fb"
   },
-  "generator_sha256": "9fe7eb2612d4c4d8436e5a627541cad32d0dcba429639855b5a0a2af04b9729a",
+  "generator_sha256": "8bff038bcb711330ba78bf433a2923d57d4ddfeedd59b8324e44e2a59f6b0389",
   "schema": "alpha-bridge/fork-ci",
   "source_branch": "main",
-  "source_commit": "45629ccc7b796fb62e6f50de63832d0d2e33254c",
+  "source_commit": "c2041a202c8f375f1eecd48995b15b095b47f268",
   "source_repository": "pydata/xarray",
   "version": 1,
   "workflows": [
