@@ -24,7 +24,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         name: Install Python
@@ -163,12 +163,12 @@ jobs:
           AB_REPOSITORY: ${{ github.repository }}
           AB_RUN_ID: ${{ github.run_id }}
           AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name
-            == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
           AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
             'workflow_run') && 'refs/heads/main' || github.ref }}
           AB_WORKFLOW_DIGEST: 
-            c49255c0728789905357f34b1dd90c0a62ae2611c0e62f84adf126d01cd06aa0
+            ae09395bebcd94b7e508fb252e02364a6443634e24da22f41e996dd25761ee8e
           AB_EVENT: ${{ github.event_name }}
           AB_SCHEDULE: ${{ github.event.schedule || '' }}
           AB_VARIABLES: ${{ toJSON(vars) }}

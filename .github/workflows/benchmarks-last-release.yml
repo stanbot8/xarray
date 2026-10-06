@@ -25,7 +25,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - name: Set up conda environment
         uses: 
@@ -65,13 +65,13 @@ jobs:
           # ID this runner
           asv machine --yes
           echo "Baseline: $GITHUB_TAG"
-          echo "Contender: ${{ ((github.event_name == 'schedule' || github.event_name == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || github.sha) }}"
+          echo "Contender: ${{ ((github.event_name == 'schedule' || github.event_name == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || github.sha) }}"
           # Use mamba for env creation
           # export CONDA_EXE=$(which mamba)
           export CONDA_EXE=$(which conda)
           # Run benchmarks for current commit against base
           ASV_OPTIONS="--split --show-stderr --factor $ASV_FACTOR"
-          asv continuous $ASV_OPTIONS "$GITHUB_TAG"  ${{ ((github.event_name == 'schedule' || github.event_name == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || github.sha) }} \
+          asv continuous $ASV_OPTIONS "$GITHUB_TAG"  ${{ ((github.event_name == 'schedule' || github.event_name == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || github.sha) }} \
               | sed "/Traceback \|failed$\|PERFORMANCE DECREASED/ s/^/::error::/" \
               | tee benchmarks.log
           # Report and export results for subsequent steps
@@ -116,12 +116,12 @@ jobs:
           AB_REPOSITORY: ${{ github.repository }}
           AB_RUN_ID: ${{ github.run_id }}
           AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name
-            == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
           AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
             'workflow_run') && 'refs/heads/main' || github.ref }}
           AB_WORKFLOW_DIGEST: 
-            0b99a7bd51c85f3d22a3e96ff87af1e3eb9bf5bbe3641a11bfc602b80d219d8c
+            21eeeece7a11c242473d1e6088f3d948245db5e38f797657002f6774eb47baf0
           AB_EVENT: ${{ github.event_name }}
           AB_SCHEDULE: ${{ github.event.schedule || '' }}
           AB_VARIABLES: ${{ toJSON(vars) }}

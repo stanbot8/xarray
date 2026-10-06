@@ -33,7 +33,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - uses: xarray-contrib/ci-trigger@10cd2bfec3484946a4058a421ddf9cfad101e715 # v1.2.1
         id: detect-trigger
@@ -67,7 +67,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - uses: 
           xarray-contrib/pixi-lock/create-and-cache@1fab4c17af8243f6ca1321bc941cf2325f46c05d     # v0.1.1
@@ -102,7 +102,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - name: Restore cached pixi lockfile
         uses: 
@@ -187,12 +187,12 @@ jobs:
           AB_REPOSITORY: ${{ github.repository }}
           AB_RUN_ID: ${{ github.run_id }}
           AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name
-            == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
           AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
             'workflow_run') && 'refs/heads/main' || github.ref }}
           AB_WORKFLOW_DIGEST: 
-            beb668bb6d7178f9ba89c37d2196abd4f6f503f977540e66d8ef89c6aab5949d
+            82918bb85d6b7892369f8f9127bb855d95363599562df122d91edef9d8cbe522
           AB_EVENT: ${{ github.event_name }}
           AB_SCHEDULE: ${{ github.event.schedule || '' }}
           AB_VARIABLES: ${{ toJSON(vars) }}

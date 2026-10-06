@@ -29,7 +29,7 @@ jobs:
           persist-credentials: false
 
           ref: ${{ (github.event_name == 'schedule' || github.event_name == 
-            'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
       - name: Set up conda environment
         uses: 
@@ -58,7 +58,7 @@ jobs:
           GITHUB_LABEL: ${{ github.event.pull_request.base.label }}
           ALPHA_BRIDGE_SOURCE_SHA: ${{ (github.event_name == 'schedule' || 
             github.event_name == 'workflow_run') && 
-            'c2041a202c8f375f1eecd48995b15b095b47f268' || github.sha }}
+            'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || github.sha }}
           ALPHA_BRIDGE_SOURCE_REF: ${{ (github.event_name == 'schedule' || 
             github.event_name == 'workflow_run') && 'refs/heads/main' || 
             github.ref }}
@@ -115,12 +115,12 @@ jobs:
           AB_REPOSITORY: ${{ github.repository }}
           AB_RUN_ID: ${{ github.run_id }}
           AB_HEAD_SHA: ${{ (github.event_name == 'schedule' || github.event_name
-            == 'workflow_run') && 'c2041a202c8f375f1eecd48995b15b095b47f268' || 
+            == 'workflow_run') && 'e53a54da5b2c608b388f0eea8414b2b870f3b53f' || 
             github.sha }}
           AB_REF: ${{ (github.event_name == 'schedule' || github.event_name == 
             'workflow_run') && 'refs/heads/main' || github.ref }}
           AB_WORKFLOW_DIGEST: 
-            1099b22791d57e6b98bad94842b93dcbab61ca4343cc98760d8ed043644b8f88
+            efa6d2648df55c8ef10ed254c14c0f856b29b8fddf5903ddc9771ee417b7011d
           AB_EVENT: ${{ github.event_name }}
           AB_SCHEDULE: ${{ github.event.schedule || '' }}
           AB_VARIABLES: ${{ toJSON(vars) }}
